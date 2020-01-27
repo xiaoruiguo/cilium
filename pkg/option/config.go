@@ -609,6 +609,10 @@ const (
 	// IPAMENI is the value to select the AWS ENI IPAM plugin for option.IPAM
 	IPAMENI = "eni"
 
+	// IPAMAzure is the value to select the Azure IPAM plugin for
+	// option.IPAM
+	IPAMAzure = "azure"
+
 	// ENITags are the tags that will be added to every ENI created by the AWS ENI IPAM
 	ENITags = "eni-tags"
 
