@@ -495,7 +495,7 @@ func init() {
 	flags.Bool(option.EnableNodePort, false, "Enable NodePort type services by Cilium (beta)")
 	option.BindEnv(option.EnableNodePort)
 
-	flags.String(option.NodePortMode, defaults.NodePortMode, "BPF NodePort mode (\"snat\", \"dsr\")")
+	flags.String(option.NodePortMode, defaults.NodePortMode, "BPF NodePort mode (\"snat\", \"dsr\", \"hybrid\")")
 	option.BindEnv(option.NodePortMode)
 
 	flags.StringSlice(option.NodePortRange, []string{fmt.Sprintf("%d", option.NodePortMinDefault), fmt.Sprintf("%d", option.NodePortMaxDefault)}, fmt.Sprintf("Set the min/max NodePort port range"))
@@ -1478,7 +1478,7 @@ func initKubeProxyReplacementOptions() {
 			}
 		}
 
-		if option.Config.NodePortMode != "dsr" && option.Config.NodePortMode != "snat" {
+		if option.Config.NodePortMode != "dsr" && option.Config.NodePortMode != "snat" && option.Config.NodePortMode != "hybrid" {
 			log.Fatalf("Invalid value for --%s: %s", option.NodePortMode, option.Config.NodePortMode)
 		}
 
