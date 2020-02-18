@@ -22,6 +22,29 @@
 
 #include "dbg.h"
 
+#if defined IPV4_FRAGMENTS && defined HAVE_LRU_MAP_TYPE
+struct ipv4_frag_id {
+	__be32	daddr;
+	__be32	saddr;
+	__be16	id;		/* L4 datagram identifier */
+	__u8	proto;
+} __attribute__((packed));
+
+struct ipv4_frag_l4ports {
+	__be16	dport;
+	__be16	sport;
+} __attribute__((packed));
+
+struct bpf_elf_map __section_maps IPV4_FRAG_DATAGRAMS_MAP = {
+	.type           = BPF_MAP_TYPE_LRU_HASH,
+	.size_key	= sizeof(struct ipv4_frag_id),
+	.size_value	= sizeof(struct ipv4_frag_l4ports),
+	.pinning	= PIN_GLOBAL_NS,
+	.max_elem	= CILIUM_IPV4_FRAG_MAP_MAX_ENTRIES,
+	.flags		= CONDITIONAL_PREALLOC,
+};
+#endif
+
 static inline int ipv4_load_daddr(struct __sk_buff *skb, int off, __u32 *dst)
 {
 	return skb_load_bytes(skb, off + offsetof(struct iphdr, daddr), dst, 4);
@@ -59,5 +82,64 @@ static inline bool ipv4_is_fragment(struct iphdr *ip4)
 	// fragment. The evil bit must be set to 0 (RFC791, RFC3514).
 	return ip4->frag_off & bpf_htons(0xBFFF);
 }
+
+#if defined IPV4_FRAGMENTS && defined HAVE_LRU_MAP_TYPE
+static inline bool ipv4_is_not_first_fragment(const struct iphdr *ip4)
+{
+	/* Ignore "More fragments" bit to catch all fragments but the first */
+	return ip4->frag_off & bpf_htons(0x9FFF);
+}
+
+static inline int ipv4_frag_get_l4ports(const struct ipv4_frag_id *frag_id,
+					struct ipv4_frag_l4ports *ports)
+{
+	struct ipv4_frag_l4ports *tmp;
+
+	tmp = map_lookup_elem(&IPV4_FRAG_DATAGRAMS_MAP, &frag_id);
+	if (!tmp)
+		return -1;
+
+	/* Do not make ports a pointer to map data, copy from map */
+	memcpy(ports, tmp, sizeof(*ports));
+	return 0;
+}
+
+static inline int ipv4_frag_register_datagram(struct __sk_buff *skb, int l4_off,
+					      const struct ipv4_frag_id *frag_id,
+					      struct ipv4_frag_l4ports *ports)
+{
+	int ret;
+
+	ret = skb_load_bytes(skb, l4_off, ports, 4);
+	if (ret < 0)
+		return ret;
+
+	map_update_elem(&IPV4_FRAG_DATAGRAMS_MAP, frag_id, ports, BPF_ANY);
+	/* Do not return an error if map update failed, as nothing prevents us
+	 * to process the current packet normally */
+	return 0;
+}
+
+static inline int ipv4_handle_fragment(struct __sk_buff *skb,
+				       const struct iphdr *ip4, int l4_off,
+				       struct ipv4_frag_l4ports *ports)
+{
+	struct ipv4_frag_id frag_id = {
+		.daddr = ip4->daddr,
+		.saddr = ip4->saddr,
+		.id = ip4->id,
+		.proto = ip4->protocol,
+	};
+
+	if (likely(ipv4_is_not_first_fragment(ip4)))
+		return ipv4_frag_get_l4ports(&frag_id, ports);
+	else
+		/* First logical fragment for this datagram (not necessarily the
+		 * first we receive). Fragment has L4 header, we can retrieve L4
+		 * ports and create an entry in datagrams map. */
+		return ipv4_frag_register_datagram(skb, l4_off, &frag_id,
+						   ports);
+}
+#endif
 
 #endif /* __LIB_IPV4__ */

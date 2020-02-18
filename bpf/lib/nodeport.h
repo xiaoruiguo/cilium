@@ -979,7 +979,8 @@ static inline int nodeport_lb4(struct __sk_buff *skb, __u32 src_identity)
 
 	l4_off = l3_off + ipv4_hdrlen(ip4);
 
-	ret = lb4_extract_key(skb, &tuple, l4_off, &key, &csum_off, CT_EGRESS);
+	ret = lb4_extract_key(skb, ip4, l4_off, &key, &csum_off,
+			      CT_EGRESS);
 	if (IS_ERR(ret)) {
 		if (ret == DROP_UNKNOWN_L4)
 			return TC_ACT_OK;
