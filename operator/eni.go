@@ -127,7 +127,7 @@ func startENIAllocator(awsClientQPSLimit float64, awsClientBurst int, eniTags ma
 		ec2Client = ec2shim.NewClient(ec2.New(cfg), eniMetrics, awsClientQPSLimit, awsClientBurst)
 		log.Info("Connected to EC2 service API")
 		instances = eni.NewInstancesManager(ec2Client, eniTags)
-		nodeManager, err = ipam.NewNodeManager(instances, &k8sAPI{}, eniMetrics, eniParallelWorkers,
+		nodeManager, err = ipam.NewNodeManager(instances, &k8sAPI{}, eniMetrics, parallelAllocWorkers,
 			option.Config.AwsReleaseExcessIps)
 		if err != nil {
 			return fmt.Errorf("unable to initialize ENI node manager: %s", err)
@@ -139,7 +139,7 @@ func startENIAllocator(awsClientQPSLimit float64, awsClientBurst int, eniTags ma
 		ec2Client = ec2shim.NewClient(ec2.New(cfg), noOpMetric, awsClientQPSLimit, awsClientBurst)
 		log.Info("Connected to EC2 service API")
 		instances = eni.NewInstancesManager(ec2Client, eniTags)
-		nodeManager, err = ipam.NewNodeManager(instances, &k8sAPI{}, noOpMetric, eniParallelWorkers,
+		nodeManager, err = ipam.NewNodeManager(instances, &k8sAPI{}, noOpMetric, parallelAllocWorkers,
 			option.Config.AwsReleaseExcessIps)
 		if err != nil {
 			return fmt.Errorf("unable to initialize ENI node manager: %s", err)

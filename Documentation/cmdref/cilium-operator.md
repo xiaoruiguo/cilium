@@ -31,7 +31,6 @@ cilium-operator [flags]
   -D, --debug                                  Enable debugging mode
       --enable-k8s-endpoint-slice              Enables k8s EndpointSlice feature into Cilium-Operator if the k8s cluster supports it (default true)
       --enable-metrics                         Enable Prometheus metrics
-      --eni-parallel-workers int               Maximum number of parallel workers used by ENI allocator (default 50)
       --eni-tags map                           ENI tags in the form of k1=v1 (multiple k/v pairs can be passed by repeating the CLI flag) (default map[])
   -h, --help                                   help for cilium-operator
       --identity-allocation-mode string        Method to use for identity allocation (default "kvstore")
@@ -47,6 +46,7 @@ cilium-operator [flags]
       --kvstore-opt map                        Key-value store options (default map[])
       --metrics-address string                 Address to serve Prometheus metrics (default ":6942")
       --nodes-gc-interval duration             GC interval for nodes store in the kvstore (default 2m0s)
+      --parallel-alloc-workers int             Maximum number of parallel workers while allocating (default 50)
       --synchronize-k8s-nodes                  Synchronize Kubernetes nodes to kvstore and perform CNP GC (default true)
       --synchronize-k8s-services               Synchronize Kubernetes services to kvstore (default true)
       --unmanaged-pod-watcher-interval int     Interval to check for unmanaged kube-dns pods (0 to disable) (default 15)

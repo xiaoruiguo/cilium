@@ -333,6 +333,10 @@ Removed options
 * ``enable-legacy-services``: This option was deprecated in Cilium 1.6 and is
   now removed.
 
+* ``eni-parallel-workers``: This option in the Operator has been renamed to
+  ``parallel-alloc-workers``. The obsolete option name ``eni-parallel-workers``
+  has been deprecated and will be removed in v1.9.
+
 .. _1.7_upgrade_notes:
 
 1.7 Upgrade Notes

@@ -68,7 +68,7 @@ var (
 	synchronizeNodes        bool
 	enableMetrics           bool
 	metricsAddress          string
-	eniParallelWorkers      int64
+	parallelAllocWorkers    int64
 	enableENI               bool
 	eniTags                 = make(map[string]string)
 	awsInstanceLimitMapping = make(map[string]string)
@@ -134,7 +134,9 @@ func init() {
 	option.BindEnv(option.IdentityAllocationMode)
 	flags.DurationVar(&identityGCInterval, "identity-gc-interval", defaults.KVstoreLeaseTTL, "GC interval for security identities")
 	flags.DurationVar(&kvNodeGCInterval, "nodes-gc-interval", time.Minute*2, "GC interval for nodes store in the kvstore")
-	flags.Int64Var(&eniParallelWorkers, "eni-parallel-workers", defaults.ENIParallelWorkers, "Maximum number of parallel workers used by ENI allocator")
+	flags.Int64Var(&parallelAllocWorkers, "eni-parallel-workers", defaults.ParallelAllocWorkers, "Maximum number of parallel workers used by ENI allocator")
+	flags.MarkDeprecated("eni-parallel-workers", "please use --parallel-alloc-workers")
+	flags.Int64Var(&parallelAllocWorkers, "parallel-alloc-workers", defaults.ParallelAllocWorkers, "Maximum number of parallel workers while allocating")
 	flags.String(option.K8sNamespaceName, "", "Name of the Kubernetes namespace in which Cilium Operator is deployed in")
 	option.BindEnv(option.K8sNamespaceName)
 	flags.Bool(option.K8sEnableEndpointSlice, defaults.K8sEnableEndpointSlice, fmt.Sprintf("Enables k8s EndpointSlice feature into Cilium-Operator if the k8s cluster supports it"))
