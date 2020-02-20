@@ -80,6 +80,11 @@ var (
 	cmdRefDir string
 )
 
+const (
+	optionAPIClientQPSLimit = "limit-api-qps"
+	optionAPIClientBurst    = "limit-api-burst"
+)
+
 func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
@@ -144,8 +149,12 @@ func init() {
 
 	flags.IntVar(&unmanagedKubeDnsWatcherInterval, "unmanaged-pod-watcher-interval", 15, "Interval to check for unmanaged kube-dns pods (0 to disable)")
 
-	flags.Int(option.AWSClientBurst, defaults.AWSClientBurst, "Burst value allowed for the AWS client used by the AWS ENI IPAM")
-	flags.Float64(option.AWSClientQPSLimit, defaults.AWSClientQPSLimit, "Queries per second limit for the AWS client used by the AWS ENI IPAM")
+	flags.Int("aws-client-burst", defaults.APIClientBurst, "Burst value allowed for the AWS client used by the AWS ENI IPAM")
+	flags.MarkDeprecated("aws-client-burst", fmt.Sprintf("please use --%s", optionAPIClientBurst))
+	flags.Int(optionAPIClientBurst, defaults.APIClientBurst, "Upper burst limit when accessing external APIs")
+	flags.Float64("aws-client-qps", defaults.APIClientQPSLimit, "Queries per second limit for the AWS client used by the AWS ENI IPAM")
+	flags.MarkDeprecated("aws-client-qps", fmt.Sprintf("please use --%s", optionAPIClientQPSLimit))
+	flags.Float64(optionAPIClientQPSLimit, defaults.APIClientQPSLimit, "Queries per second limit when accessing external APIs")
 	flags.Var(option.NewNamedMapOptions(option.ENITags, &eniTags, nil), option.ENITags, "ENI tags in the form of k1=v1 (multiple k/v pairs can be passed by repeating the CLI flag)")
 	flags.Var(option.NewNamedMapOptions(option.AwsInstanceLimitMapping, &awsInstanceLimitMapping, nil),
 		option.AwsInstanceLimitMapping, "Add or overwrite mappings of AWS instance limit in the form of {\"AWS instance type\": \"Maximum Network Interfaces\",\"IPv4 Addresses per Interface\",\"IPv6 Addresses per Interface\"}. cli example: --aws-instance-limit-mapping=a1.medium=2,4,4 --aws-instance-limit-mapping=a2.somecustomflavor=4,5,6 configmap example: {\"a1.medium\": \"2,4,4\", \"a2.somecustomflavor\": \"4,5,6\"}")
@@ -269,8 +278,8 @@ func runOperator(cmd *cobra.Command) {
 				log.WithError(err).Error("Unable to update instance type to adapter limits from EC2 API")
 			}
 		}
-		awsClientQPSLimit := viper.GetFloat64(option.AWSClientQPSLimit)
-		awsClientBurst := viper.GetInt(option.AWSClientBurst)
+		awsClientQPSLimit := viper.GetFloat64(optionAPIClientQPSLimit)
+		awsClientBurst := viper.GetInt(optionAPIClientBurst)
 		if m := viper.GetStringMapString(option.ENITags); len(m) > 0 {
 			eniTags = m
 		}

@@ -609,12 +609,6 @@ const (
 	// IPAMENI is the value to select the AWS ENI IPAM plugin for option.IPAM
 	IPAMENI = "eni"
 
-	// AWSClientQPSLimit is the queries per second limit for the AWS client used by AWS ENI IPAM
-	AWSClientQPSLimit = "aws-client-qps"
-
-	// AWSClientBurst is the burst value allowed for the AWS client used by the AWS ENI IPAM
-	AWSClientBurst = "aws-client-burst"
-
 	// ENITags are the tags that will be added to every ENI created by the AWS ENI IPAM
 	ENITags = "eni-tags"
 
