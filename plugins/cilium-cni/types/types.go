@@ -20,20 +20,99 @@ import (
 	"io/ioutil"
 	"net"
 
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
-
 	cniTypes "github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
+// ENISpec is the ENI specification of a node.
+//
+// NOTE: This type was duplicated from pkg/k8s/apis/cilium.io/v2 to reduce
+// package dependencies. Any changes made here should be reflected in the
+// ENISpec type in pkg/k8s/apis/cilium.io/v2 as well.
+type ENISpec struct {
+	// InstanceID is the AWS InstanceId of the node. The InstanceID is used
+	// to retrieve AWS metadata for the node.
+	InstanceID string `json:"instance-id,omitempty"`
+
+	// InstanceType is the AWS EC2 instance type, e.g. "m5.large"
+	InstanceType string `json:"instance-type,omitempty"`
+
+	// MinAllocate is the minimum number of IPs that must be allocated when
+	// the node is first bootstrapped. It defines the minimum base socket
+	// of addresses that must be available. After reaching this watermark,
+	// the PreAllocate and MaxAboveWatermark logic takes over to continue
+	// allocating IPs.
+	//
+	// +optional
+	MinAllocate int `json:"min-allocate,omitempty"`
+
+	// PreAllocate defines the number of IP addresses that must be
+	// available for allocation in the IPAMspec. It defines the buffer of
+	// addresses available immediately without requiring cilium-operator to
+	// get involved.
+	//
+	// +optional
+	PreAllocate int `json:"pre-allocate,omitempty"`
+
+	// MaxAboveWatermark is the maximum number of addresses to allocate
+	// beyond the addresses needed to reach the PreAllocate watermark.
+	// Going above the watermark can help reduce the number of API calls to
+	// allocate IPs, e.g. when a new ENI is allocated, as many secondary
+	// IPs as possible are allocated. Limiting the amount can help reduce
+	// waste of IPs.
+	//
+	// +optional
+	MaxAboveWatermark int `json:"max-above-watermark,omitempty"`
+
+	// FirstInterfaceIndex is the index of the first ENI to use for IP
+	// allocation, e.g. if the node has eth0, eth1, eth2 and
+	// FirstInterfaceIndex is set to 1, then only eth1 and eth2 will be
+	// used for IP allocation, eth0 will be ignored for PodIP allocation.
+	//
+	// +optional
+	FirstInterfaceIndex *int `json:"first-interface-index,omitempty"`
+
+	// SecurityGroups is the list of security groups to attach to any ENI
+	// that is created and attached to the instance.
+	//
+	// +optional
+	SecurityGroups []string `json:"security-groups,omitempty"`
+
+	// SecurityGroupTags is the list of tags to use when evaliating what
+	// AWS security groups to use for the ENI.
+	//
+	// +optional
+	SecurityGroupTags map[string]string `json:"security-group-tags,omitempty"`
+
+	// SubnetTags is the list of tags to use when evaluating what AWS
+	// subnets to use for ENI and IP allocation
+	//
+	// +optional
+	SubnetTags map[string]string `json:"subnet-tags,omitempty"`
+
+	// VpcID is the VPC ID to use when allocating ENIs
+	VpcID string `json:"vpc-id,omitempty"`
+
+	// AvailabilityZone is the availability zone to use when allocating
+	// ENIs
+	AvailabilityZone string `json:"availability-zone,omitempty"`
+
+	// DeleteOnTermination defines that the ENI should be deleted when the
+	// associated instance is terminated. If the parameter is not set the
+	// default behavior is to delete the ENI on instance termination.
+	//
+	// +optional
+	DeleteOnTermination *bool `json:"delete-on-termination,omitempty"`
+}
+
 // NetConf is the Cilium specific CNI network configuration
 type NetConf struct {
 	cniTypes.NetConf
-	MTU         int              `json:"mtu"`
-	Args        Args             `json:"args"`
-	ENI         ciliumv2.ENISpec `json:"eni,omitempty"`
-	EnableDebug bool             `json:"enable-debug"`
+	MTU         int     `json:"mtu"`
+	Args        Args    `json:"args"`
+	ENI         ENISpec `json:"eni,omitempty"`
+	EnableDebug bool    `json:"enable-debug"`
 }
 
 // NetConfList is a CNI chaining configuration
